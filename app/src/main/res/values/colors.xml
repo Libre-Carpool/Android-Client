@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Air theme colors -->
+    <color name="air_primary">#2196F3</color>
+    <color name="air_primary_dark">#1976D2</color>
+    <color name="air_primary_light">#BBDEFB</color>
+    <color name="air_accent">#2196F3</color>
+    <!-- General -->
+    <color name="material_text">#212121</color>
+    <color name="material_primary_text">#FFFFFF</color>
+    <color name="material_secondary_text">#9C9C9C</color>
+    <color name="material_divider">#1CFFFFFF</color>
+    <color name="material_divider_dark">#1C000000</color>
+    <!-- Other -->
+    <color name="ride_card_background">@android:color/background_light</color>
+    <color name="login_prompt_text_background">#80FFFFFF</color>
+</resources>

@@ -1,0 +1,31 @@
+<resources>
+    <!-- Default screen margins, per the Android Design guidelines. -->
+    <dimen name="activity_horizontal_margin">16dp</dimen>
+    <dimen name="activity_vertical_margin">16dp</dimen>
+    <dimen name="hitch_activity_bottom_margin">24dp</dimen>
+
+    <dimen name="fab_horizontal_margin">16dp</dimen>
+    <dimen name="fab_vertical_margin">16dp</dimen>
+    <dimen name="fab_mini_diameter">40dp</dimen>
+    <dimen name="fab_elevation">10sp</dimen>
+
+    <dimen name="item_margin">8dp</dimen>
+    <dimen name="item_height">42dp</dimen>
+
+    <dimen name="hitch_filter_bottom_margin">30dp</dimen>
+    <dimen name="filter_parameter_textSize">18sp</dimen>
+
+    <dimen name="label_text_size">12sp</dimen>
+    <dimen name="label_height">72dp</dimen>
+
+    <dimen name="input_hint_text_size">16sp</dimen>
+
+    <dimen name="ride_list_divider_height">12dp</dimen>
+
+    <dimen name="ride_info_dialog_text_size">16sp</dimen>
+    <dimen name="ride_info_dialog_horizontal_padding">16dp</dimen>
+    <dimen name="ride_info_dialog_vertical_padding">16dp</dimen>
+    <dimen name="ride_info_dialog_action_buttons_vertical_padding">32dp</dimen>
+
+    <dimen name="ride_filter_no_rides_text_size">24sp</dimen>
+</resources>

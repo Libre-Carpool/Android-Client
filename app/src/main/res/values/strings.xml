@@ -1,0 +1,41 @@
+<resources>
+    <string name="app_name">Libre Carpool</string>
+    <string name="action_settings">Settings</string>
+    <string name="action_about">About</string>
+
+    <string name="title_activity_offer_ride">Offer a Ride</string>
+    <string name="departing_info">Departing From:</string>
+    <string name="destination">Destination:</string>
+    <string name="at">At:</string>
+    <string name="through">Through:</string>
+    <string name="comments">Comments:</string>
+    <string name="save">Save</string>
+
+    <string name="search_hint">Tap here to choose destination</string>
+
+    <string name="find">Find</string>
+
+    <string name="clear_fields_button">Clear Fields</string>
+
+    <string-array name="origins">
+        <item>Any</item>
+    </string-array>
+
+    <string name="ride_card_departure">Leaves at %1$d:%2$02d from %3$s</string>
+    <string name="ride_dialog_info_title">Ride Details</string>
+    <string name="ride_dialog_info_destination">Ride to %1$s from %2$s at %3$s</string>
+    <string name="ride_dialog_info_through">Going through %1$s</string>
+    <string name="ride_dialog_info_comments">Driver\'s Comments: %1$s</string>
+    <string name="ride_dialog_call">Call</string>
+    <string name="ride_dialog_message">Message</string>
+
+    <string name="ride_request_sms_body">Hello! I would like a ride to %1$s from %2$s at %3$s:%4$02d.</string>
+
+    <string name="dialog_button_dismiss">Dismiss</string>
+
+    <string name="saved">Saved.</string>
+    <string name="missing_destination">Missing destination.</string>
+    <string name="missing_time">Missing departure time.</string>
+
+    <string name="no_rides_found">Couldn\'t find any rides.</string>
+</resources>
