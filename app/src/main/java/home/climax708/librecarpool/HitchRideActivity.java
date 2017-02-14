@@ -9,6 +9,7 @@ import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.Snackbar;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -33,6 +34,8 @@ import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
+import com.afollestad.materialdialogs.GravityEnum;
+import com.afollestad.materialdialogs.MaterialDialog;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
@@ -45,7 +48,7 @@ import com.google.android.gms.location.places.ui.PlaceAutocomplete;
 import java.util.Calendar;
 
 public class HitchRideActivity extends AppCompatActivity
-    implements ServerConnection.OnRidesRetrievedListener,
+        implements ServerConnection.OnRidesRetrievedListener,
         RidesAdapter.ViewHolder.OnRideCardClickListener {
 
     public final static String ARG_HOUR_OF_DAY = "ARG_HOD";
@@ -98,7 +101,7 @@ public class HitchRideActivity extends AppCompatActivity
 
         Ride filterRide;
         if (mRideDestination == null) {
-             filterRide = new Ride(null, mRideTime, mRideOriginID, null, "", null);
+            filterRide = new Ride(null, mRideTime, mRideOriginID, null, "", null);
         } else {
             filterRide = new Ride(null, mRideTime, mRideOriginID, null, mRideDestination, null);
         }
@@ -296,15 +299,27 @@ public class HitchRideActivity extends AppCompatActivity
             progressBar.setVisibility(View.GONE);
         }
 
-        if (rides.length == 0) {
+        if (rides == null || rides.length == 0) {
             TextView noResultsTextView = (TextView)
-                findViewById(R.id.noResultsTextView);
+                    findViewById(R.id.noResultsTextView);
+
             if (noResultsTextView != null) {
                 noResultsTextView.setVisibility(View.VISIBLE);
             }
+        } else {
+            mRidesAdapter.addItems(rides);
         }
+    }
 
-        mRidesAdapter.addItems(rides);
+    @Override
+    public void failedToFetchRiders(String message) {
+        new MaterialDialog.Builder(this)
+                .content(message)
+                .title("ארעה שגיאה בזמן ביצוע הסריקה")
+                .titleGravity(GravityEnum.START)
+                .buttonsGravity(GravityEnum.START)
+                .contentGravity(GravityEnum.START)
+                .positiveText("אישור").show();
     }
 
     @Override
