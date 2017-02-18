@@ -20,7 +20,7 @@ import java.util.ArrayList;
 public class ServerConnection {
 
     private GetPlacesTask mGetPlacesTask;
-    private final String URL = "https://placeholder/rides.html"; // TODO: Set this to your web servers URL
+    private final String URL = "https://rawgit.com/Libre-Carpool/Android-Client/master/rides.html"; // TODO: Set this to your web servers URL
 
     public interface OnRidesRetrievedListener {
         void onRidesRetrievingStarted();
