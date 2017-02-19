@@ -28,4 +28,5 @@ dependencies {
     compile 'com.google.android.gms:play-services-appindexing:9.6.1'
     compile 'com.google.android.gms:play-services-places:9.6.1'
     compile 'org.jsoup:jsoup:1.9.2'
+    compile 'com.afollestad.material-dialogs:core:0.8.5.9@aar'
 }

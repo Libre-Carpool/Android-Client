@@ -8,6 +8,7 @@ import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.location.places.PlaceBuffer;
 import com.google.android.gms.location.places.Places;
 
+import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -19,25 +20,43 @@ import java.util.ArrayList;
 
 public class ServerConnection {
 
+    private AsyncStatus _status;
     private GetPlacesTask mGetPlacesTask;
     private final String URL = "https://rawgit.com/Libre-Carpool/Android-Client/master/rides.html"; // TODO: Set this to your web servers URL
+
+    private enum AsyncStatus {
+        finished,
+        canceled,
+        noInternet,
+        unknownexception, unreachableUrl, connectionProblem, readingProblem, finishedReading,
+    }
+
+    private void setStatus(AsyncStatus stat) {
+        this._status = stat;
+    }
+
+    private AsyncStatus getFetchStatus() {
+        return this._status;
+    }
 
     public interface OnRidesRetrievedListener {
         void onRidesRetrievingStarted();
         void onRidesRetrieved(Ride[] rides);
+        void failedToFetchRiders(String message);
     }
 
     public void cancelTask() {
         if (isTaskRunning()) {
-            mGetPlacesTask.cancel(true);
+            setStatus(AsyncStatus.canceled);
         }
     }
 
     public void getRides(GoogleApiClient googleApiClient, OnRidesRetrievedListener listener,
                          Ride... params) {
         if (isTaskRunning()) {
-            mGetPlacesTask.cancel(true);
+            setStatus(AsyncStatus.canceled);
         }
+
         mGetPlacesTask = new GetPlacesTask(googleApiClient, listener);
         mGetPlacesTask.execute(params);
     }
@@ -59,10 +78,11 @@ public class ServerConnection {
 
         @Override
         protected Ride[] doInBackground(Ride... params) {
-            if (isCancelled())
-                return new Ride[0];
+            // Sets the status to finished because in every error we change it and then we know that something happened
+            setStatus(AsyncStatus.finished);
 
-            Ride[] rides = null;
+            Ride[] rides = new Ride[0];
+
             try {
                 Document doc = Jsoup.connect(URL).timeout(10*1000).get();
                 Elements rows = doc.select("tr");
@@ -90,22 +110,28 @@ public class ServerConnection {
              * + IOException
              */
             catch (MalformedURLException e) {
+                setStatus(AsyncStatus.unreachableUrl);
+                Log.d("ServerConnection", "doInBackground :: MalformedURLException");
+                e.printStackTrace();
+            }
+            catch (HttpStatusException e) {
+                setStatus(AsyncStatus.connectionProblem);
                 Log.d("ServerConnection", "doInBackground :: MalformedURLException");
                 e.printStackTrace();
             }
             catch (IOException e) {
+                setStatus(AsyncStatus.readingProblem);
                 Log.d("ServerConnection", "doInBackground :: IOException");
                 e.printStackTrace();
             }
             catch(Exception e) {
+                setStatus(AsyncStatus.unknownexception);
                 e.printStackTrace();
             }
 
-            for (int i = 0; i < rides.length; i++) {
-                if (isCancelled())
-                    break;
-
+            for (int i = 0; i < rides.length && !isCancelled(); i++) {
                 Ride currentRide = rides[i];
+
                 if (currentRide == null)
                     continue;
 
@@ -124,12 +150,10 @@ public class ServerConnection {
                 places.release();
             }
 
-            if (params == null || isCancelled()) {
-                // Get all available rides
-                return rides;
+            if (getFetchStatus() != AsyncStatus.finished) {
+                return null;
             } else {
-                // Filter rides according to parameters.
-                return filterRides(rides, params);
+                return (params == null ? rides : filterRides(rides, params));
             }
         }
 
@@ -142,8 +166,31 @@ public class ServerConnection {
 
         @Override
         protected void onPostExecute(Ride[] rides) {
-            if (mListener != null)
-                mListener.onRidesRetrieved(isCancelled() ? new Ride[0] : rides);
+            switch(getFetchStatus()) {
+                case finished:
+                    if (mListener != null)
+                        mListener.onRidesRetrieved(rides);
+                    break;
+                case unknownexception:
+                    mListener.failedToFetchRiders("שגיאה לא צפויה קרתה, אנא נסה שנית מאוחר יותר");
+                    break;
+                case readingProblem:
+                    mListener.failedToFetchRiders("לא ניתן לאמת את השרת, אנא נסה שנית מאוחר יותר");
+                    break;
+                case unreachableUrl:
+                    mListener.failedToFetchRiders("לא ניתן לאמת את השרת, אנא נסה שנית מאוחר יותר");
+                    break;
+                case canceled:
+                    mListener.failedToFetchRiders("הפעולה בוטלה");
+                    break;
+                case noInternet:
+                    mListener.failedToFetchRiders("לא נמצא חיבור רשת");
+                    break;
+                case connectionProblem:
+                    break;
+            }
+
+            this.mListener.onRidesRetrieved(null);
         }
     }
 
@@ -175,6 +222,7 @@ public class ServerConnection {
             }
         }
         Ride[] filteredRidesArray = new Ride[filteredRides.size()];
+
         for (int i = 0; i < filteredRidesArray.length; i++) {
             filteredRidesArray[i] = filteredRides.get(i);
         }
