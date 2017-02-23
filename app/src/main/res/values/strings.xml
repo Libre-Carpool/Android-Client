@@ -38,4 +38,5 @@
     <string name="missing_time">Missing departure time.</string>
 
     <string name="no_rides_found">Couldn\'t find any rides.</string>
+    <string name="rides_retrieval_error">An error has occurred.</string>
 </resources>

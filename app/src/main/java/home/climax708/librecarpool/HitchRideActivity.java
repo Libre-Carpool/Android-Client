@@ -65,6 +65,8 @@ public class HitchRideActivity extends AppCompatActivity
 
     private TextView mDepartureTimeTextView;
 
+    private TextView mResultsTextView;
+
     private RideTime mRideTime;
     private Place mRideDestination = null;
     private String mRideOriginID;
@@ -210,6 +212,8 @@ public class HitchRideActivity extends AppCompatActivity
         mRideTime = new RideTime(calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE));
         mDepartureTimeTextView.setText(mRideTime.toString());
 
+        mResultsTextView = (TextView) findViewById(R.id.resultsTextView);
+
         mOriginSpinner = (Spinner) findViewById(R.id.hitch_origin_spinner);
         setupOriginSpinner(mOriginSpinner);
 
@@ -283,10 +287,7 @@ public class HitchRideActivity extends AppCompatActivity
             progressBar.setVisibility(View.VISIBLE);
         }
 
-        TextView noResultsTextView = (TextView) findViewById(R.id.noResultsTextView);
-        if (noResultsTextView != null) {
-            noResultsTextView.setVisibility(View.GONE);
-        }
+        mResultsTextView.setVisibility(View.GONE);
     }
 
     @Override
@@ -297,14 +298,21 @@ public class HitchRideActivity extends AppCompatActivity
         }
 
         if (rides.length == 0) {
-            TextView noResultsTextView = (TextView)
-                findViewById(R.id.noResultsTextView);
-            if (noResultsTextView != null) {
-                noResultsTextView.setVisibility(View.VISIBLE);
-            }
+            mResultsTextView.setText(R.string.no_rides_found);
+            mResultsTextView.setVisibility(View.VISIBLE);
+        } else {
+            mRidesAdapter.addItems(rides);
         }
+    }
 
-        mRidesAdapter.addItems(rides);
+    @Override
+    public void onRidesRetrievingFailed(Exception exception) {
+        // Clear current rides
+        mRidesAdapter.clear();
+
+        // Display error TextView
+        mResultsTextView.setText(R.string.rides_retrieval_error);
+        mResultsTextView.setVisibility(View.VISIBLE);
     }
 
     @Override

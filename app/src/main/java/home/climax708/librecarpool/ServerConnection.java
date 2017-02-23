@@ -25,6 +25,7 @@ public class ServerConnection {
     public interface OnRidesRetrievedListener {
         void onRidesRetrievingStarted();
         void onRidesRetrieved(Ride[] rides);
+        void onRidesRetrievingFailed(Exception exception);
     }
 
     public void cancelTask() {
@@ -84,21 +85,10 @@ public class ServerConnection {
                     rides[i - 1] =  new Ride(phone, new RideTime(time), origin, through, destination, comments);
                 }
             }
-            // TODO: Handle exceptions
-            /* Possible exceptions
-             * + MalformedURLException
-             * + IOException
-             */
-            catch (MalformedURLException e) {
-                Log.d("ServerConnection", "doInBackground :: MalformedURLException");
-                e.printStackTrace();
-            }
-            catch (IOException e) {
-                Log.d("ServerConnection", "doInBackground :: IOException");
-                e.printStackTrace();
-            }
-            catch(Exception e) {
-                e.printStackTrace();
+
+            // Pass errors to be handled by implementing listeners.
+            catch (Exception e) {
+                mListener.onRidesRetrievingFailed(e);
             }
 
             for (int i = 0; i < rides.length; i++) {
