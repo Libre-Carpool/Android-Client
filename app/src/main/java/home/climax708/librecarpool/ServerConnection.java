@@ -63,7 +63,7 @@ public class ServerConnection {
             if (isCancelled())
                 return new Ride[0];
 
-            Ride[] rides = null;
+            Ride[] rides = new Ride[0];
             try {
                 Document doc = Jsoup.connect(URL).timeout(10*1000).get();
                 Elements rows = doc.select("tr");
