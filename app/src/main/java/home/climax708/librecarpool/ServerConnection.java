@@ -52,6 +52,8 @@ public class ServerConnection {
         private GoogleApiClient mGoogleApiClient;
         private OnRidesRetrievedListener mListener;
 
+        private boolean mIsRetrievalSuccessful = true;
+
         public GetPlacesTask(GoogleApiClient googleApiClient, OnRidesRetrievedListener listener) {
             mGoogleApiClient = googleApiClient;
             mListener = listener;
@@ -83,48 +85,51 @@ public class ServerConnection {
 
                     rides[i - 1] =  new Ride(phone, new RideTime(time), origin, through, destination, comments);
                 }
+
+                // Convert Google Place ID to Google Place objects.
+
+                // Double the length since we need to convert origin and destination for every ride.
+                String[] placeIds = new String[rides.length * 2];
+
+                for (int i = 0; i < rides.length; i++) {
+                    if (isCancelled())
+                        break;
+
+                    // Set departure place id
+                    placeIds[i] = rides[i].getDeparturePlaceID();
+                    // Set destination place id.
+                    // Offset the index by rides.length, essentially split the array to destination and departure place ids.
+                    placeIds[i + rides.length] = rides[i].getDestinationPlaceID();
+                }
+
+                PendingResult<PlaceBuffer> destinationPlacesBuffer;
+                destinationPlacesBuffer = Places.GeoDataApi.getPlaceById(
+                        mGoogleApiClient, placeIds);
+                PlaceBuffer places = destinationPlacesBuffer.await();
+
+                int placesCount = places.getCount();
+                if (placesCount == rides.length * 2) {
+                    for (int i = 0; i < rides.length; i++) {
+                        if (isCancelled())
+                            break;
+
+                        // Freezing the place object is necessary for later use since we are closing the buffer.
+                        // refer to: https://developers.google.com/places/android-api/buffers
+                        rides[i].setDeparturePlace(places.get(i).freeze());
+                        rides[i].setDestinationPlace(places.get(i + rides.length).freeze());
+                    }
+                }
+
+                places.release();
+
             }
 
             // Pass errors to be handled by implementing listeners.
             catch (Exception e) {
                 mListener.onRidesRetrievingFailed(e);
+                mIsRetrievalSuccessful = false;
+                return new Ride[0];
             }
-
-            // Convert Google Place ID to Google Place objects.
-
-            // Double the length since we need to convert origin and destination for every ride.
-            String[] placeIds = new String[rides.length * 2];
-
-            for (int i = 0; i < rides.length; i++) {
-                if (isCancelled())
-                    break;
-
-                // Set departure place id
-                placeIds[i] = rides[i].getDeparturePlaceID();
-                // Set destination place id.
-                // Offset the index by rides.length, essentially split the array to destination and departure place ids.
-                placeIds[i + rides.length] = rides[i].getDestinationPlaceID();
-            }
-
-            PendingResult<PlaceBuffer> destinationPlacesBuffer;
-            destinationPlacesBuffer = Places.GeoDataApi.getPlaceById(
-                    mGoogleApiClient, placeIds);
-            PlaceBuffer places = destinationPlacesBuffer.await();
-
-            int placesCount = places.getCount();
-            if (placesCount == rides.length * 2) {
-                for (int i = 0; i < rides.length; i++) {
-                    if (isCancelled())
-                        break;
-
-                    // Freezing the place object is necessary for later use since we are closing the buffer.
-                    // refer to: https://developers.google.com/places/android-api/buffers
-                    rides[i].setDeparturePlace(places.get(i).freeze());
-                    rides[i].setDestinationPlace(places.get(i + rides.length).freeze());
-                }
-            }
-
-            places.release();
 
             if (params == null || isCancelled()) {
                 // Get all available rides
@@ -144,7 +149,7 @@ public class ServerConnection {
 
         @Override
         protected void onPostExecute(Ride[] rides) {
-            if (mListener != null)
+            if (mListener != null && mIsRetrievalSuccessful)
                 mListener.onRidesRetrieved(isCancelled() ? new Ride[0] : rides);
         }
     }
