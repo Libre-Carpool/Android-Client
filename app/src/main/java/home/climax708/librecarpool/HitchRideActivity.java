@@ -8,6 +8,7 @@ import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
@@ -292,15 +293,11 @@ public class HitchRideActivity extends AppCompatActivity
 
     @Override
     public void onRidesRetrieved(Ride[] rides) {
-        ProgressBar progressBar = (ProgressBar) findViewById(R.id.ridesProgressBar);
-        if (progressBar != null) {
-            progressBar.setVisibility(View.GONE);
-        }
-
         if (rides.length == 0) {
-            mResultsTextView.setText(R.string.no_rides_found);
-            mResultsTextView.setVisibility(View.VISIBLE);
+            // Display empty results text.
+            onRidesRetrievalEnd(getString(R.string.no_rides_found));
         } else {
+            onRidesRetrievalEnd(null);
             mRidesAdapter.addItems(rides);
         }
     }
@@ -310,9 +307,24 @@ public class HitchRideActivity extends AppCompatActivity
         // Clear current rides
         mRidesAdapter.clear();
 
-        // Display error TextView
-        mResultsTextView.setText(R.string.rides_retrieval_error);
-        mResultsTextView.setVisibility(View.VISIBLE);
+        // Display error text.
+        onRidesRetrievalEnd(getString(R.string.rides_retrieval_error));
+    }
+    /**
+     * Handles rides retrieval task ending - whether successful or not.
+     * Cleans up after retrieval has started.
+     * @param results Result TextView to display
+     */
+    private void onRidesRetrievalEnd(@Nullable String results) {
+        ProgressBar progressBar = (ProgressBar) findViewById(R.id.ridesProgressBar);
+        if (progressBar != null) {
+            progressBar.setVisibility(View.GONE);
+        }
+
+        if (results != null) {
+            mResultsTextView.setText(results);
+            mResultsTextView.setVisibility(View.VISIBLE);
+        }
     }
 
     @Override
