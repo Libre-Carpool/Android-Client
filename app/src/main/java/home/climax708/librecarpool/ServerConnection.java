@@ -82,6 +82,9 @@ public class ServerConnection {
 
                 // Start from 1 because first row displays column names.
                 for (int i = 1; i < rowCount; i++) {
+                    if (isCancelled())
+                        break;
+
                     Element row = rows.get(i);
                     Elements cols = row.select("td");
 
