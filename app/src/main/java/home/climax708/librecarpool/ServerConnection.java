@@ -91,28 +91,41 @@ public class ServerConnection {
                 mListener.onRidesRetrievingFailed(e);
             }
 
+            // Convert Google Place ID to Google Place objects.
+
+            // Double the length since we need to convert origin and destination for every ride.
+            String[] placeIds = new String[rides.length * 2];
+
             for (int i = 0; i < rides.length; i++) {
                 if (isCancelled())
                     break;
 
-                Ride currentRide = rides[i];
-                if (currentRide == null)
-                    continue;
-
-                PendingResult<PlaceBuffer> destinationPlacesBuffer;
-                destinationPlacesBuffer = Places.GeoDataApi.getPlaceById(
-                        mGoogleApiClient,
-                        currentRide.getDeparturePlaceID(),
-                        currentRide.getDestinationPlaceID());
-                PlaceBuffer places = destinationPlacesBuffer.await();
-
-                // Freezing the place object is necessary for later use since we are closing the buffer.
-                // refer to: https://developers.google.com/places/android-api/buffers
-                currentRide.setDeparturePlace(places.get(0).freeze());
-                currentRide.setDestinationPlace(places.get(1).freeze());
-
-                places.release();
+                // Set departure place id
+                placeIds[i] = rides[i].getDeparturePlaceID();
+                // Set destination place id.
+                // Offset the index by rides.length, essentially split the array to destination and departure place ids.
+                placeIds[i + rides.length] = rides[i].getDestinationPlaceID();
             }
+
+            PendingResult<PlaceBuffer> destinationPlacesBuffer;
+            destinationPlacesBuffer = Places.GeoDataApi.getPlaceById(
+                    mGoogleApiClient, placeIds);
+            PlaceBuffer places = destinationPlacesBuffer.await();
+
+            int placesCount = places.getCount();
+            if (placesCount == rides.length * 2) {
+                for (int i = 0; i < rides.length; i++) {
+                    if (isCancelled())
+                        break;
+
+                    // Freezing the place object is necessary for later use since we are closing the buffer.
+                    // refer to: https://developers.google.com/places/android-api/buffers
+                    rides[i].setDeparturePlace(places.get(i).freeze());
+                    rides[i].setDestinationPlace(places.get(i + rides.length).freeze());
+                }
+            }
+
+            places.release();
 
             if (params == null || isCancelled()) {
                 // Get all available rides
