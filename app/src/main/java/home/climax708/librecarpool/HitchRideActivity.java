@@ -99,13 +99,12 @@ public class HitchRideActivity extends AppCompatActivity
     public void filterRides(View view) {
         toggleExpandedFilterOptionsLayout(false);
 
-        Ride filterRide;
-        if (mRideDestination == null) {
-             filterRide = new Ride(null, mRideTime, mRideOriginID, null, "", null);
-        } else {
-            filterRide = new Ride(null, mRideTime, mRideOriginID, null, mRideDestination, null);
+        String destinationPlaceId = null;
+        if (mRideDestination != null) {
+            destinationPlaceId = mRideDestination.getId();
         }
-        updateRidesView(filterRide);
+        RideSearch rideSearch = new RideSearch(mRideTime, mRideOriginID, destinationPlaceId);
+        updateRidesView(rideSearch);
     }
 
     public void contactViaMessage(View view, Ride ride) {
@@ -270,7 +269,7 @@ public class HitchRideActivity extends AppCompatActivity
         // Refresh rides when application is (re)started.
         // Make sure it takes filter rides into consideration (if any).
         if (mRideOriginID != null || mRideDestination != null)
-            updateRidesView(new Ride(null, mRideTime, mRideOriginID, null, mRideDestination, null));
+            updateRidesView(new RideSearch(mRideTime, mRideOriginID, mRideDestination.getId()));
         else
             updateRidesView();
     }
@@ -475,10 +474,10 @@ public class HitchRideActivity extends AppCompatActivity
         updateRidesView(null);
     }
 
-    private void updateRidesView(Ride... rides) {
+    private void updateRidesView(RideSearch rideSearch) {
         mRidesAdapter.clear();
         if (mGoogleApiClient != null) {
-            mServerConnection.getRides(mGoogleApiClient, this, rides);
+            mServerConnection.getRides(mGoogleApiClient, this, rideSearch);
         }
     }
 

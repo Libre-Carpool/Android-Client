@@ -34,12 +34,12 @@ public class ServerConnection {
     }
 
     public void getRides(GoogleApiClient googleApiClient, OnRidesRetrievedListener listener,
-                         Ride... params) {
+                         RideSearch rideSearch) {
         if (isTaskRunning()) {
             mGetPlacesTask.cancel(true);
         }
         mGetPlacesTask = new GetPlacesTask(googleApiClient, listener);
-        mGetPlacesTask.execute(params);
+        mGetPlacesTask.execute(rideSearch);
     }
 
     private boolean isTaskRunning() {
@@ -47,7 +47,7 @@ public class ServerConnection {
                 && mGetPlacesTask.getStatus() == AsyncTask.Status.RUNNING);
     }
 
-    private class GetPlacesTask extends AsyncTask<Ride, Integer, Ride[]> {
+    private class GetPlacesTask extends AsyncTask<RideSearch, Integer, Ride[]> {
 
         private GoogleApiClient mGoogleApiClient;
         private OnRidesRetrievedListener mListener;
@@ -60,7 +60,7 @@ public class ServerConnection {
         }
 
         @Override
-        protected Ride[] doInBackground(Ride... params) {
+        protected Ride[] doInBackground(RideSearch... params) {
             if (isCancelled())
                 return new Ride[0];
 
@@ -131,12 +131,12 @@ public class ServerConnection {
                 return new Ride[0];
             }
 
-            if (params == null || isCancelled()) {
+            if (params[0] == null || isCancelled()) {
                 // Get all available rides
                 return rides;
             } else {
                 // Filter rides according to parameters.
-                return filterRides(rides, params);
+                return filterRides(rides, params[0]);
             }
         }
 
@@ -154,32 +154,36 @@ public class ServerConnection {
         }
     }
 
-    private Ride[] filterRides(Ride[] ridesPool, Ride... filterRides) {
+    private Ride[] filterRides(Ride[] ridesPool, RideSearch rideSearch) {
         ArrayList<Ride> filteredRides = new ArrayList<>();
         for (Ride rideFromPool : ridesPool) {
-            for (Ride filterRide : filterRides) {
-                if (filterRide == null)
+            if (rideSearch != null) {
+                String rideSearchDeparturePlaceId = rideSearch.getDeparturePlaceId();
+                if (rideSearchDeparturePlaceId != null
+                        && !rideFromPool.getDeparturePlaceID().equals(rideSearchDeparturePlaceId))
                     continue;
-                if (filterRide.getDeparturePlaceID() != null
-                        && !rideFromPool.getDeparturePlaceID().equals(filterRide.getDeparturePlaceID()))
+
+                String rideSearchDestinationPlaceId = rideSearch.getDestinationPlaceId();
+                if (rideSearchDestinationPlaceId != null
+                        && !rideFromPool.getDestinationPlaceID().equals(rideSearchDestinationPlaceId))
                     continue;
-                if (filterRide.getDestinationPlace() != null
-                        && !rideFromPool.getDestinationPlace().getId().equals(filterRide.getDestinationPlace().getId()))
-                    continue;
-                if (filterRide.getRideTime() != null) {
-                    if (rideFromPool.getRideTime().getHour() < filterRide.getRideTime().getHour())
+
+                RideTime rideSearchDepartureTime = rideSearch.getDepartureTime();
+                if (rideSearchDepartureTime != null) {
+                    if (rideFromPool.getRideTime().getHour() < rideSearchDepartureTime.getHour())
                         continue;
                     else {
-                        if (rideFromPool.getRideTime().getHour() == filterRide.getRideTime().getHour()) {
-                            if (rideFromPool.getRideTime().getMinute() < filterRide.getRideTime().getMinute())
+                        if (rideFromPool.getRideTime().getHour() == rideSearchDepartureTime.getHour()) {
+                            if (rideFromPool.getRideTime().getMinute() < rideSearchDepartureTime.getMinute())
                                 continue;
                         }
                     }
                 }
-                if (filteredRides.contains(rideFromPool))
-                    continue;
-                filteredRides.add(rideFromPool);
             }
+
+            if (filteredRides.contains(rideFromPool))
+                continue;
+            filteredRides.add(rideFromPool);
         }
         Ride[] filteredRidesArray = new Ride[filteredRides.size()];
         for (int i = 0; i < filteredRidesArray.length; i++) {
