@@ -22,6 +22,8 @@ public class ServerConnection {
     private GetPlacesTask mGetPlacesTask;
     private final String URL = "https://rawgit.com/Libre-Carpool/Android-Client/master/rides.html"; // TODO: Set this to your web servers URL
 
+    private final static int MAX_TIMEOUT_MS = 10000; // 10 seconds.
+
     public interface OnRidesRetrievedListener {
         void onRidesRetrievingStarted();
         void onRidesRetrieved(Ride[] rides);
@@ -65,7 +67,7 @@ public class ServerConnection {
 
             Ride[] rides = new Ride[0];
             try {
-                Document doc = Jsoup.connect(URL).timeout(10*1000).get();
+                Document doc = Jsoup.connect(URL).timeout(MAX_TIMEOUT_MS).get();
                 Elements rows = doc.select("tr");
                 int rowCount = rows.size();
                 rides = new Ride[rowCount - 1];
