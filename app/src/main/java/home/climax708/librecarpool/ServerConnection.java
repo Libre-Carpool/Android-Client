@@ -53,6 +53,7 @@ public class ServerConnection {
         private OnRidesRetrievedListener mListener;
 
         private boolean mIsRetrievalSuccessful = true;
+        private Exception mRetrievalException;
 
         public GetPlacesTask(GoogleApiClient googleApiClient, OnRidesRetrievedListener listener) {
             mGoogleApiClient = googleApiClient;
@@ -121,13 +122,10 @@ public class ServerConnection {
                 }
 
                 places.release();
-
-            }
-
-            // Pass errors to be handled by implementing listeners.
-            catch (Exception e) {
-                mListener.onRidesRetrievingFailed(e);
+            } catch (Exception e) {
+                // Pass errors to be handled by implementing listeners.
                 mIsRetrievalSuccessful = false;
+                mRetrievalException = e;
                 return new Ride[0];
             }
 
@@ -149,8 +147,13 @@ public class ServerConnection {
 
         @Override
         protected void onPostExecute(Ride[] rides) {
-            if (mListener != null && mIsRetrievalSuccessful)
-                mListener.onRidesRetrieved(isCancelled() ? new Ride[0] : rides);
+            if (mListener != null) {
+                if (mIsRetrievalSuccessful) {
+                    mListener.onRidesRetrieved(isCancelled() ? new Ride[0] : rides);
+                } else {
+                    mListener.onRidesRetrievingFailed(mRetrievalException);
+                }
+            }
         }
     }
 
