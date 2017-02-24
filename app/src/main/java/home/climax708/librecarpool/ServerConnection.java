@@ -65,12 +65,21 @@ public class ServerConnection {
             if (isCancelled())
                 return new Ride[0];
 
-            Ride[] rides = new Ride[0];
+            Ride[] rides;
+            Ride.Builder[] rideBuilder;
             try {
                 Document doc = Jsoup.connect(URL).timeout(MAX_TIMEOUT_MS).get();
                 Elements rows = doc.select("tr");
                 int rowCount = rows.size();
-                rides = new Ride[rowCount - 1];
+
+                // Skip the first row as it displays column names.
+                int ridesCount = rowCount - 1;
+                rides = new Ride[ridesCount];
+                rideBuilder = new Ride.Builder[ridesCount];
+
+                // Double the length since we need to convert origin and destination for every ride.
+                String[] placeIds = new String[ridesCount * 2];
+
                 // Start from 1 because first row displays column names.
                 for (int i = 1; i < rowCount; i++) {
                     Element row = rows.get(i);
@@ -84,25 +93,25 @@ public class ServerConnection {
                     String through      = cols.get(5).text();
                     String comments     = cols.get(6).text();
 
-                    rides[i - 1] =  new Ride(phone, new RideTime(time), origin, through, destination, comments);
+                    int ridesIndex = i - 1;
+
+                    rideBuilder[ridesIndex] = new Ride.Builder();
+                    rideBuilder[ridesIndex]
+                            .setDriverPhoneNumber(phone)
+                            .setDepartureRideTime(new RideTime(time))
+                            .setDeparturePlaceId(origin)
+                            .setPassingThrough(through)
+                            .setDestinationPlaceId(destination)
+                            .setComments(comments);
+
+                    // Set departure place id
+                    placeIds[ridesIndex] = origin;
+                    // Set destination place id.
+                    // Offset the index by rides.length, essentially split the array to destination and departure place ids.
+                    placeIds[ridesIndex + ridesCount] = destination;
                 }
 
                 // Convert Google Place ID to Google Place objects.
-
-                // Double the length since we need to convert origin and destination for every ride.
-                String[] placeIds = new String[rides.length * 2];
-
-                for (int i = 0; i < rides.length; i++) {
-                    if (isCancelled())
-                        break;
-
-                    // Set departure place id
-                    placeIds[i] = rides[i].getDeparturePlaceID();
-                    // Set destination place id.
-                    // Offset the index by rides.length, essentially split the array to destination and departure place ids.
-                    placeIds[i + rides.length] = rides[i].getDestinationPlaceID();
-                }
-
                 PendingResult<PlaceBuffer> destinationPlacesBuffer;
                 destinationPlacesBuffer = Places.GeoDataApi.getPlaceById(
                         mGoogleApiClient, placeIds);
@@ -116,8 +125,12 @@ public class ServerConnection {
 
                         // Freezing the place object is necessary for later use since we are closing the buffer.
                         // refer to: https://developers.google.com/places/android-api/buffers
-                        rides[i].setDeparturePlace(places.get(i).freeze());
-                        rides[i].setDestinationPlace(places.get(i + rides.length).freeze());
+                        rideBuilder[i]
+                                .setDeparturePlace(places.get(i).freeze())
+                                .setDestinationPlace(places.get(i + rides.length).freeze());
+
+                        // Finish the building.
+                        rides[i] = rideBuilder[i].build();
                     }
                 }
 
